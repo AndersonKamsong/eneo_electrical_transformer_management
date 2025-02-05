@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "398889858847",
+    "project_id": "eneo-management-app",
+    "storage_bucket": "eneo-management-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:398889858847:android:f77684dbe425581fd2622a",
+        "android_client_info": {
+          "package_name": "com.example.eneo_management_app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "398889858847-oin5mnpc12bjokumm8oqb57j2b9rfg8k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbKoxAQrWzQU5Hon4i3Mv8e4GNex9QwHM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "398889858847-oin5mnpc12bjokumm8oqb57j2b9rfg8k.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
