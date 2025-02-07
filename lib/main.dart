@@ -9,6 +9,7 @@ import 'screens/auth/profile_screen.dart'; // Import your ProfilePage
 import 'screens/auth/update_password_screen.dart'; // Import your UpdatePasswordPage
 import 'screens/transformer/transformer_screens.dart';
 import 'screens/transformer/map_view_screen.dart';
+import 'screens/maintenance_task/maintenance_list_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,6 +36,7 @@ class MyApp extends StatelessWidget {
         '/updatePassword': (context) => UpdatePasswordPage(),
         '/transformer': (context) => TransformerManagementScreen(),
         '/map': (context) => MapViewScreen(),
+        '/task': (context) => MaintenanceListScreen(),
       },
     );
   }

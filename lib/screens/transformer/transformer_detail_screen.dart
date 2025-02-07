@@ -8,6 +8,7 @@ class TransformerDetailsScreen extends StatelessWidget {
 
   const TransformerDetailsScreen({Key? key, required this.transformerData}) : super(key: key);
 
+  // Function to open Google Maps with the transformer location
   Future<void> _openGoogleMaps(double latitude, double longitude) async {
     final Uri url = Uri.parse('https://www.google.com/maps/search/?api=1&query=$latitude,$longitude');
 
@@ -18,6 +19,96 @@ class TransformerDetailsScreen extends StatelessWidget {
     }
   }
 
+  // Function to create a new maintenance task
+  Future<void> _createMaintenanceTask(BuildContext context, String taskName, String technicianId, DateTime scheduledDate) async {
+    try {
+      CollectionReference maintenanceTasks = FirebaseFirestore.instance.collection('maintenance_tasks');
+
+      await maintenanceTasks.add({
+        'transformer_id': transformerData['id'], // Assuming the transformer has an 'id' field
+        'assigned_to': technicianId,
+        'status': 'Pending',
+        'scheduled_date': Timestamp.fromDate(scheduledDate),
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Maintenance Task Created Successfully!')));
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error creating task: $e')));
+    }
+  }
+
+  // Form to create a new maintenance task
+  void _showMaintenanceTaskForm(BuildContext context) {
+    final TextEditingController taskNameController = TextEditingController();
+    final TextEditingController technicianIdController = TextEditingController();
+    DateTime? selectedDate;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Create Maintenance Task'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                  controller: taskNameController,
+                  decoration: InputDecoration(labelText: 'Task Name'),
+                ),
+                TextField(
+                  controller: technicianIdController,
+                  decoration: InputDecoration(labelText: 'Technician ID'),
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () async {
+                    final DateTime? pickedDate = await showDatePicker(
+                      context: context,
+                      initialDate: DateTime.now(),
+                      firstDate: DateTime(2000),
+                      lastDate: DateTime(2101),
+                    );
+                    if (pickedDate != null && pickedDate != selectedDate) {
+                      selectedDate = pickedDate;
+                    }
+                  },
+                  child: Text(selectedDate == null
+                      ? 'Select Scheduled Date'
+                      : 'Scheduled Date: ${DateFormat.yMMMd().format(selectedDate!)}'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (taskNameController.text.isNotEmpty &&
+                    technicianIdController.text.isNotEmpty &&
+                    selectedDate != null) {
+                  _createMaintenanceTask(
+                    context,
+                    taskNameController.text,
+                    technicianIdController.text,
+                    selectedDate!,
+                  );
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please fill all fields')));
+                }
+              },
+              child: Text('Create Task'),
+            ),
+          ],
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,6 +138,13 @@ class TransformerDetailsScreen extends StatelessWidget {
                 onPressed: () => _openGoogleMaps(transformerData['latitude'], transformerData['longitude']),
                 icon: Icon(Icons.map),
                 label: Text('Open in Google Maps'),
+              ),
+            ),
+            SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: () => _showMaintenanceTaskForm(context),
+                child: Text('Create Maintenance Task'),
               ),
             ),
           ],

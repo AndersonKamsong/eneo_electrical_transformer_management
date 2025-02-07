@@ -1,13 +1,31 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MaintenanceService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
 
-  Future<void> scheduleMaintenance(Map<String, dynamic> maintenanceData) async {
-    await _firestore.collection("maintenance_schedules").add(maintenanceData);
+  // Get all tasks
+  Future<List<Map<String, dynamic>>> getAllTasks() async {
+    QuerySnapshot snapshot = await _db.collection('maintenance_tasks').get();
+    return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
   }
 
-  Stream<QuerySnapshot> getMaintenanceTasks(String technicianId) {
-    return _firestore.collection("maintenance_schedules").where("technician_id", isEqualTo: technicianId).snapshots();
+  // Get a single task by its taskId
+  Future<Map<String, dynamic>> getTaskById(String taskId) async {
+    DocumentSnapshot doc = await _db.collection('maintenance_tasks').doc(taskId).get();
+    return doc.data() as Map<String, dynamic>;
+  }
+
+  // Update task status
+  Future<void> updateTaskStatus(String taskId, String status) async {
+    await _db.collection('maintenance_tasks').doc(taskId).update({
+      'status': status,
+    });
+  }
+
+  // Assign task to a technician
+  Future<void> assignTask(String taskId, String technicianId) async {
+    await _db.collection('maintenance_tasks').doc(taskId).update({
+      'assigned_to': technicianId,
+    });
   }
 }
