@@ -7,6 +7,42 @@
   "client": [
     {
       "client_info": {
+        "mobilesdk_app_id": "1:398889858847:android:ce109363b9062d84d2622a",
+        "android_client_info": {
+          "package_name": "com.example.eneo_electrical_transformer_management"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "398889858847-oin5mnpc12bjokumm8oqb57j2b9rfg8k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCbKoxAQrWzQU5Hon4i3Mv8e4GNex9QwHM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "398889858847-oin5mnpc12bjokumm8oqb57j2b9rfg8k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "398889858847-ricfoj9urk8kofr6kgpjbrkbckp1n2k6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.eneoElectricalTransformerManagement"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
         "mobilesdk_app_id": "1:398889858847:android:f77684dbe425581fd2622a",
         "android_client_info": {
           "package_name": "com.example.eneo_management_app"
@@ -29,6 +65,13 @@
             {
               "client_id": "398889858847-oin5mnpc12bjokumm8oqb57j2b9rfg8k.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "398889858847-ricfoj9urk8kofr6kgpjbrkbckp1n2k6.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.eneoElectricalTransformerManagement"
+              }
             }
           ]
         }

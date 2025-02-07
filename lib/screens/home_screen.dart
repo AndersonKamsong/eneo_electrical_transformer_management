@@ -1,51 +1,73 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../services/auth_service.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../services/auth_service.dart';
+import 'auth/login_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
   final AuthService authService = AuthService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  User? user = FirebaseAuth.instance.currentUser;
+  bool isLoading = false;
 
-  Future<String?> getUserRole(String userId) async {
-    DocumentSnapshot userDoc = await _firestore.collection("users").doc(userId).get();
-    if (userDoc.exists) {
-      return userDoc["role"];
-    }
-    return null;
+  void logout() async {
+    setState(() => isLoading = true);
+
+    await authService.signOut();
+
+    setState(() => isLoading = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text("Logged out successfully!"),
+        backgroundColor: Colors.green,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    User? user = authService.getCurrentUser();
-
     return Scaffold(
-      appBar: AppBar(title: Text("Home")),
+      appBar: AppBar(
+        title: const Text("Home"),
+        actions: [
+          isLoading
+              ? const Padding(
+            padding: EdgeInsets.all(10.0),
+            child: CircularProgressIndicator(color: Colors.white),
+          )
+              : IconButton(
+            icon: const Icon(Icons.logout),
+            onPressed: logout,
+          ),
+        ],
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            if (user != null)
-              FutureBuilder<String?>(
-                future: getUserRole(user.uid),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return CircularProgressIndicator();
-                  }
-                  if (snapshot.hasData) {
-                    return Text("Welcome ${user.email}\nRole: ${snapshot.data}");
-                  } else {
-                    return Text("User role not found");
-                  }
-                },
-              ),
-            SizedBox(height: 20),
+            Text(
+              "Welcome, ${user?.email ?? "User"}!",
+              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+            ),
+            const SizedBox(height: 10),
+            const Text("You are now logged in."),
             ElevatedButton(
               onPressed: () {
-                authService.signOut();
-                Navigator.pushReplacementNamed(context, "/login");
+                Navigator.pushNamed(context, '/profile');
               },
-              child: Text("Logout"),
+              child: Text('Go to Profile'),
             ),
           ],
         ),
