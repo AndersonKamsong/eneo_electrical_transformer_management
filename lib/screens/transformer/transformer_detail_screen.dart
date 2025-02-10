@@ -20,7 +20,7 @@ class TransformerDetailsScreen extends StatelessWidget {
   }
 
   // Function to create a new maintenance task
-  Future<void> _createMaintenanceTask(BuildContext context, String taskName, String technicianId, DateTime scheduledDate) async {
+  Future<void> _createMaintenanceTask(BuildContext context, String taskName, String technicianId, DateTime scheduledDate, String zone) async {
     try {
       CollectionReference maintenanceTasks = FirebaseFirestore.instance.collection('maintenance_tasks');
 
@@ -29,6 +29,7 @@ class TransformerDetailsScreen extends StatelessWidget {
         'assigned_to': technicianId,
         'status': 'Pending',
         'scheduled_date': Timestamp.fromDate(scheduledDate),
+        'zone': zone,  // Save the zone
       });
 
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Maintenance Task Created Successfully!')));
@@ -42,6 +43,7 @@ class TransformerDetailsScreen extends StatelessWidget {
     final TextEditingController taskNameController = TextEditingController();
     final TextEditingController technicianIdController = TextEditingController();
     DateTime? selectedDate;
+    String? selectedZone = transformerData['zone'];  // Pre-select zone from transformer data
 
     showDialog(
       context: context,
@@ -76,6 +78,18 @@ class TransformerDetailsScreen extends StatelessWidget {
                       ? 'Select Scheduled Date'
                       : 'Scheduled Date: ${DateFormat.yMMMd().format(selectedDate!)}'),
                 ),
+                SizedBox(height: 16),
+                DropdownButtonFormField<String>(
+                  value: selectedZone,
+                  items: [
+                    'Central', 'Littoral', 'West', 'North', 'South', 'Northwest',
+                    'Southwest', 'East', 'Adamawa', 'Far North'
+                  ].map((zone) {
+                    return DropdownMenuItem(value: zone, child: Text(zone));
+                  }).toList(),
+                  onChanged: (value) => selectedZone = value,
+                  decoration: InputDecoration(labelText: 'Select Zone'),
+                ),
               ],
             ),
           ),
@@ -90,12 +104,14 @@ class TransformerDetailsScreen extends StatelessWidget {
               onPressed: () {
                 if (taskNameController.text.isNotEmpty &&
                     technicianIdController.text.isNotEmpty &&
-                    selectedDate != null) {
+                    selectedDate != null &&
+                    selectedZone != null) {
                   _createMaintenanceTask(
                     context,
                     taskNameController.text,
                     technicianIdController.text,
                     selectedDate!,
+                    selectedZone!,
                   );
                   Navigator.pop(context);
                 } else {
@@ -132,6 +148,8 @@ class TransformerDetailsScreen extends StatelessWidget {
               'Installation Date: ${DateFormat.yMMMd().format((transformerData['installationDate'] as Timestamp).toDate())}',
               style: TextStyle(fontSize: 16),
             ),
+            SizedBox(height: 8),
+            Text('Zone: ${transformerData['zone']}', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),  // Display zone
             SizedBox(height: 20),
             Center(
               child: ElevatedButton.icon(

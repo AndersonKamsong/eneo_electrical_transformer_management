@@ -12,6 +12,7 @@ class TransformerService {
     required double longitude,
     required DateTime installationDate,
     required String status, // e.g., Active, Under Maintenance, Faulty
+    required String zone,   // New field for zone
   }) async {
     try {
       await _firestore.collection('transformers').doc(id).set({
@@ -22,6 +23,7 @@ class TransformerService {
         'longitude': longitude,
         'installationDate': installationDate,
         'status': status,
+        'zone': zone,  // Save the zone
         'createdAt': FieldValue.serverTimestamp(),
       });
       print('Transformer added successfully');
@@ -40,6 +42,7 @@ class TransformerService {
     double? longitude,
     DateTime? installationDate,
     String? status,
+    String? zone,  // Optional zone update
   }) async {
     try {
       Map<String, dynamic> updateData = {};
@@ -49,6 +52,7 @@ class TransformerService {
       if (longitude != null) updateData['longitude'] = longitude;
       if (installationDate != null) updateData['installationDate'] = installationDate;
       if (status != null) updateData['status'] = status;
+      if (zone != null) updateData['zone'] = zone;  // Update the zone if provided
 
       if (updateData.isNotEmpty) {
         await _firestore.collection('transformers').doc(id).update(updateData);
@@ -130,6 +134,20 @@ class TransformerService {
       return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
     } catch (e) {
       print('Error fetching transformers in area: $e');
+      throw e;
+    }
+  }
+
+  // Fetch transformers by zone
+  Future<List<Map<String, dynamic>>> fetchTransformersByZone(String zone) async {
+    try {
+      QuerySnapshot snapshot = await _firestore
+          .collection('transformers')
+          .where('zone', isEqualTo: zone)
+          .get();
+      return snapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();
+    } catch (e) {
+      print('Error fetching transformers by zone: $e');
       throw e;
     }
   }

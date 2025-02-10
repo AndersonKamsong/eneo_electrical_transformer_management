@@ -18,15 +18,33 @@ class _TransformerManagementScreenState extends State<TransformerManagementScree
     return Scaffold(
       appBar: AppBar(
         title: Text('Transformer Management'),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add),
+        // actions: [
+        //   IconButton(
+        //     icon: Icon(Icons.add),
+        //     onPressed: () {
+        //       Navigator.push(
+        //         context,
+        //         MaterialPageRoute(builder: (context) => AddTransformerScreen()),
+        //       );
+        //     },
+        //   ),
+        // ],
+      ),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SizedBox(
+            height: 10,
+          ),
+          FloatingActionButton(
+            heroTag: "add",
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => AddTransformerScreen()),
               );
             },
+            child: Icon(Icons.add),
           ),
         ],
       ),

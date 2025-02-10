@@ -16,6 +16,13 @@ class _AddTransformerScreenState extends State<AddTransformerScreen> {
   final TextEditingController _longitudeController = TextEditingController();
   DateTime? _installationDate;
   String _status = 'Active';
+  String _zone = 'Central';  // Default zone
+
+  // List of regions in Cameroon
+  List<String> zones = [
+    'Central', 'Littoral', 'West', 'North', 'South', 'Northwest', 'Southwest',
+    'East', 'Adamawa', 'Far North'
+  ];
 
   Future<void> _addTransformer() async {
     if (_formKey.currentState!.validate()) {
@@ -28,6 +35,7 @@ class _AddTransformerScreenState extends State<AddTransformerScreen> {
           'longitude': double.parse(_longitudeController.text),
           'installationDate': _installationDate ?? DateTime.now(),
           'status': _status,
+          'zone': _zone, // Adding the zone attribute
           'createdAt': FieldValue.serverTimestamp(),
         });
         ScaffoldMessenger.of(context).showSnackBar(
@@ -111,6 +119,19 @@ class _AddTransformerScreenState extends State<AddTransformerScreen> {
                   });
                 },
                 decoration: InputDecoration(labelText: 'Status'),
+              ),
+              // Dropdown for selecting Zone (Region)
+              DropdownButtonFormField(
+                value: _zone,
+                items: zones.map((zone) {
+                  return DropdownMenuItem(value: zone, child: Text(zone));
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _zone = value.toString();
+                  });
+                },
+                decoration: InputDecoration(labelText: 'Zone (Region)'),
               ),
               SizedBox(height: 20),
               ElevatedButton(

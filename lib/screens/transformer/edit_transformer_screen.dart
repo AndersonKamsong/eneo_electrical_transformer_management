@@ -20,7 +20,14 @@ class _EditTransformerScreenState extends State<EditTransformerScreen> {
   late TextEditingController _longitudeController;
   DateTime? _installationDate;
   String? _status;
+  String? _zone;  // New zone field
   final TransformerService _transformerService = TransformerService();
+
+  // List of regions in Cameroon
+  List<String> zones = [
+    'Central', 'Littoral', 'West', 'North', 'South', 'Northwest', 'Southwest',
+    'East', 'Adamawa', 'Far North'
+  ];
 
   @override
   void initState() {
@@ -31,6 +38,7 @@ class _EditTransformerScreenState extends State<EditTransformerScreen> {
     _longitudeController = TextEditingController(text: widget.transformerData['longitude'].toString());
     _installationDate = (widget.transformerData['installationDate'] as Timestamp).toDate();
     _status = widget.transformerData['status'];
+    _zone = widget.transformerData['zone'];  // Initialize zone
   }
 
   @override
@@ -53,6 +61,7 @@ class _EditTransformerScreenState extends State<EditTransformerScreen> {
           longitude: double.parse(_longitudeController.text),
           installationDate: _installationDate!,
           status: _status!,
+          zone: _zone!,  // Pass the zone to update
         );
         Navigator.pop(context);
       } catch (e) {
@@ -119,6 +128,15 @@ class _EditTransformerScreenState extends State<EditTransformerScreen> {
                     .toList(),
                 onChanged: (value) => setState(() => _status = value),
                 decoration: InputDecoration(labelText: 'Status'),
+              ),
+              // Dropdown for selecting Zone (Region)
+              DropdownButtonFormField<String>(
+                value: _zone,
+                items: zones.map((zone) {
+                  return DropdownMenuItem(value: zone, child: Text(zone));
+                }).toList(),
+                onChanged: (value) => setState(() => _zone = value),
+                decoration: InputDecoration(labelText: 'Zone (Region)'),
               ),
               SizedBox(height: 20),
               ElevatedButton(

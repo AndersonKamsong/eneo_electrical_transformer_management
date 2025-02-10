@@ -10,6 +10,7 @@ import 'screens/auth/update_password_screen.dart'; // Import your UpdatePassword
 import 'screens/transformer/transformer_screens.dart';
 import 'screens/transformer/map_view_screen.dart';
 import 'screens/maintenance_task/maintenance_list_screen.dart';
+import 'screens/reporting/fault_report_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +38,7 @@ class MyApp extends StatelessWidget {
         '/transformer': (context) => TransformerManagementScreen(),
         '/map': (context) => MapViewScreen(),
         '/task': (context) => MaintenanceListScreen(),
+        '/reporting': (context) => FaultReportingScreen(),
       },
     );
   }

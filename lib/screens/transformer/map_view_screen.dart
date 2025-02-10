@@ -14,13 +14,26 @@ class _MapViewScreenState extends State<MapViewScreen> {
   String _selectedStatus = "All";
   String _selectedZone = "All";
 
-  // Predefined zones (example: Cameroon regions)
-  final List<String> _zones = ["All", "Yaoundé", "Douala", "Bafoussam"];
-  final List<String> _statuses = ["All", "Active", "Under Maintenance", "Faulty"];
+  final Map<String, LatLng> _zoneCoordinates = {
+    "All": LatLng(3.848, 11.502),
+    "Central": LatLng(3.848, 11.502),
+    "Littoral": LatLng(4.050, 9.767),
+    "West": LatLng(5.500, 10.417),
+    "North": LatLng(8.500, 13.667),
+    "South": LatLng(2.833, 11.167),
+    "Northwest": LatLng(6.000, 10.500),
+    "Southwest": LatLng(4.583, 9.367),
+    "East": LatLng(4.250, 14.167),
+    "Adamawa": LatLng(7.500, 13.500),
+    "Far North": LatLng(10.500, 14.250),
+  };
+
+  late MapController _mapController;
 
   @override
   void initState() {
     super.initState();
+    _mapController = MapController();
     _fetchTransformers();
   }
 
@@ -39,7 +52,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
             height: 40,
             child: GestureDetector(
               onTap: () {
-                // Navigate to TransformerDetailsScreen with transformer data
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -77,6 +89,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
     setState(() {
       _markers.clear();
       _fetchTransformers();
+      _mapController.move(_zoneCoordinates[_selectedZone]!, 13.0);
     });
   }
 
@@ -86,7 +99,6 @@ class _MapViewScreenState extends State<MapViewScreen> {
       appBar: AppBar(title: Text('Transformer Map View')),
       body: Column(
         children: [
-          // Filter Dropdowns
           Padding(
             padding: EdgeInsets.all(8.0),
             child: Row(
@@ -94,7 +106,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
               children: [
                 DropdownButton<String>(
                   value: _selectedStatus,
-                  items: _statuses.map((status) {
+                  items: ["All", "Active", "Under Maintenance", "Faulty"].map((status) {
                     return DropdownMenuItem(value: status, child: Text(status));
                   }).toList(),
                   onChanged: (value) {
@@ -104,7 +116,7 @@ class _MapViewScreenState extends State<MapViewScreen> {
                 ),
                 DropdownButton<String>(
                   value: _selectedZone,
-                  items: _zones.map((zone) {
+                  items: _zoneCoordinates.keys.map((zone) {
                     return DropdownMenuItem(value: zone, child: Text(zone));
                   }).toList(),
                   onChanged: (value) {
@@ -115,12 +127,12 @@ class _MapViewScreenState extends State<MapViewScreen> {
               ],
             ),
           ),
-          // Map View
           Expanded(
             child: FlutterMap(
+              mapController: _mapController,
               options: MapOptions(
-                initialCenter: LatLng(3.848, 11.502),
-                initialZoom: 12,
+                initialCenter: _zoneCoordinates["All"]!,
+                initialZoom: 13.0,
               ),
               children: [
                 TileLayer(
@@ -136,34 +148,3 @@ class _MapViewScreenState extends State<MapViewScreen> {
     );
   }
 }
-
-// // TransformerDetailsScreen
-// class TransformerDetailsScreen extends StatelessWidget {
-//   final Map<String, dynamic> transformerData;
-//
-//   TransformerDetailsScreen({required this.transformerData});
-//
-//   @override
-//   Widget build(BuildContext context) {
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('Transformer Details'),
-//       ),
-//       body: Padding(
-//         padding: const EdgeInsets.all(16.0),
-//         child: Column(
-//           crossAxisAlignment: CrossAxisAlignment.start,
-//           children: [
-//             Text('ID: ${transformerData['id']}', style: TextStyle(fontSize: 18)),
-//             Text('Capacity: ${transformerData['capacity']}', style: TextStyle(fontSize: 18)),
-//             Text('Location: ${transformerData['location']}', style: TextStyle(fontSize: 18)),
-//             Text('Status: ${transformerData['status']}', style: TextStyle(fontSize: 18)),
-//             Text('Installation Date: ${transformerData['installationDate'].toDate().toString()}', style: TextStyle(fontSize: 18)),
-//             Text('Latitude: ${transformerData['latitude']}', style: TextStyle(fontSize: 18)),
-//             Text('Longitude: ${transformerData['longitude']}', style: TextStyle(fontSize: 18)),
-//           ],
-//         ),
-//       ),
-//     );
-//   }
-// }
