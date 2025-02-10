@@ -60,15 +60,74 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text("Eneo Transformer Management"),
         actions: [
-          isLoading
-              ? const Padding(
-            padding: EdgeInsets.all(10.0),
-            child: CircularProgressIndicator(color: Colors.white),
-          )
-              : IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: logout,
+          StreamBuilder<User?>(
+            stream: AuthService().user,  // Listen to auth state
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (snapshot.hasData) {
+                // Check the role of the authenticated user
+                return FutureBuilder<DocumentSnapshot>(
+                  future: FirebaseFirestore.instance.collection('users').doc(snapshot.data!.uid).get(),
+                  builder: (context, roleSnapshot) {
+                    if (roleSnapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (roleSnapshot.hasError) {
+                      return const Center(child: Text('Error loading role'));
+                    }
+
+                    // final userRole = roleSnapshot.data!['role'] ?? 'user';
+
+                    // if (userRole == 'admin') {
+                      return IconButton(
+                        icon: const Icon(Icons.dashboard),
+                        onPressed: () {
+                            Navigator.pushNamed(context, '/admin');
+                          },
+                      );
+                    // } else {
+                    //   return SizedBox.shrink();  // No icon for regular users
+                    // }
+                  },
+                );
+              } else {
+                return TextButton(
+                  child: const Text("Login", style: TextStyle(color: Colors.blue)),
+                  onPressed: () {
+                    Navigator.pushNamed(context, '/login');
+                  },
+                );
+              }
+            },
           ),
+          // Logout button visible when user is authenticated
+          StreamBuilder<User?>(
+            stream: AuthService().user,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                return IconButton(
+                    icon: const Icon(Icons.logout),
+                    onPressed: logout,
+                  );
+              } else {
+                return SizedBox.shrink();  // No logout button for unauthenticated users
+              }
+            },
+          ),
+          // isLoading
+          //     ? const Padding(
+          //   padding: EdgeInsets.all(10.0),
+          //   child: CircularProgressIndicator(color: Colors.white),
+          // )
+          //     :
+          // IconButton(
+          //   icon: const Icon(Icons.logout),
+          //   onPressed: logout,
+          // ),
         ],
       ),
       body: _screens[_selectedIndex],

@@ -15,22 +15,26 @@ class AuthService {
     return String.fromCharCodes(Iterable.generate(length, (_) => characters.codeUnitAt(random.nextInt(characters.length))));
   }
 
+  Stream<User?> get user {
+    return _auth.authStateChanges();
+  }
   // Add User (Admin Only)
   Future<User?> addUser({
-    required String adminUid,
-    required String email,
-    required String username,
-    required String role,
-  }) async {
+      required String adminUid,
+      required String email,
+      required String username,
+      required String role,
+    }) async {
     try {
       // Check if the admin user is indeed an admin
       DocumentSnapshot adminDoc = await _firestore.collection("users").doc(adminUid).get();
-      if (!adminDoc.exists || adminDoc["role"] != "admin") {
+      if (!adminDoc.exists || adminDoc["role"] != "Admin") {
         throw PlatformException(code: "permission-denied", message: "Only admins can create new users");
       }
 
       // Generate random password
-      String randomPassword = _generateRandomPassword(8);
+      // String randomPassword = _generateRandomPassword(8);
+      String randomPassword = "Ander123";
 
       // Create user
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
@@ -140,6 +144,6 @@ class AuthService {
 
   // Placeholder for email sending function
   Future<void> sendEmail(String email, String subject, String body) async {
-    print("Email sent to $email with subject: $subject");
+    print("Email sent to $email with subject: $subject with body :$body");
   }
 }
