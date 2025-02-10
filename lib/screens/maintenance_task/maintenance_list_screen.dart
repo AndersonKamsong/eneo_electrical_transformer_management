@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'maintenance_task_detail_screen.dart';
+import 'package:intl/intl.dart';
 
 class MaintenanceListScreen extends StatefulWidget {
   @override
@@ -70,7 +71,9 @@ class _MaintenanceListScreenState extends State<MaintenanceListScreen> {
                     var task = tasks[index];
                     return ListTile(
                       title: Text('Transformer ID: ${task['transformer_id']}'),
-                      subtitle: Text('Scheduled Date: ${task['scheduled_date']}'),
+                      subtitle: Text('Scheduled Date: ${DateFormat('dd MMM yyyy, hh:mm a').format(
+                        (task['scheduled_date'] as Timestamp).toDate(),
+                      )}'),
                       // subtitle: Text('Scheduled taskId: ${task['taskId']}'),
                       trailing: Text(task['status'].toUpperCase()),
                       onTap: () {

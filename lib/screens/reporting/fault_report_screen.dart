@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:intl/intl.dart'; // For formatting date
 import 'fault_report_detail.dart';
 
 class FaultReportingScreen extends StatefulWidget {
@@ -26,6 +27,21 @@ class _FaultReportingScreenState extends State<FaultReportingScreen> {
         }).toList());
   }
 
+  // Query transformer and user data for display
+  Future<Map<String, dynamic>> _getTransformerData(String transformerId) async {
+    var transformerSnapshot = await _db.collection('transformers').doc(transformerId).get();
+    print("transformerSnapshot.data()");
+    print(transformerSnapshot.data());
+    return transformerSnapshot.data() ?? {};
+  }
+
+  Future<Map<String, dynamic>> _getUserData(String userId) async {
+    var userSnapshot = await _db.collection('users').doc(userId).get();
+    print("userSnapshot.data()");
+    print(userSnapshot.data());
+    return userSnapshot.data() ?? {};
+  }
+
   // Upload image to Firebase Storage
   Future<String?> _uploadImage(File image) async {
     try {
@@ -41,84 +57,6 @@ class _FaultReportingScreenState extends State<FaultReportingScreen> {
     }
   }
 
-  // Show modal to create a new fault report
-  void _showFaultReportForm() {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: Text('Report a Fault'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _descriptionController,
-                decoration: InputDecoration(labelText: 'Fault Description'),
-                maxLines: 3,
-              ),
-              SizedBox(height: 8),
-              TextButton.icon(
-                icon: Icon(Icons.photo),
-                label: Text('Attach Image'),
-                onPressed: () async {
-                  final picker = ImagePicker();
-                  final pickedFile = await picker.pickImage(source: ImageSource.gallery);
-                  if (pickedFile != null) {
-                    setState(() {
-                      _image = pickedFile;
-                    });
-                  }
-                },
-              ),
-              if (_image != null) ...[
-                SizedBox(height: 8),
-                Image.file(File(_image!.path), height: 100),
-              ],
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-                _descriptionController.clear();
-                setState(() {
-                  _image = null;
-                });
-              },
-              child: Text('Cancel'),
-            ),
-            TextButton(
-              onPressed: () async {
-                if (_descriptionController.text.isNotEmpty) {
-                  String? imageUrl;
-                  if (_image != null) {
-                    imageUrl = await _uploadImage(File(_image!.path));
-                  }
-
-                  // Save the fault report to Firestore
-                  await _db.collection('fault_reports').add({
-                    'transformer_id': 'transformer123',  // Replace with actual transformer ID
-                    'reported_by': 'userId',  // Replace with actual user ID
-                    'description': _descriptionController.text,
-                    'image_url': imageUrl ?? '',
-                    'status': 'Under Review',  // Default status
-                  });
-
-                  // Clear fields and close the modal
-                  Navigator.pop(context);
-                  _descriptionController.clear();
-                  setState(() {
-                    _image = null;
-                  });
-                }
-              },
-              child: Text('Submit Report'),
-            ),
-          ],
-        );
-      },
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -128,11 +66,6 @@ class _FaultReportingScreenState extends State<FaultReportingScreen> {
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            ElevatedButton.icon(
-              onPressed: _showFaultReportForm,
-              icon: Icon(Icons.add),
-              label: Text('Report a Fault'),
-            ),
             SizedBox(height: 16),
             Expanded(
               child: StreamBuilder<List<Map<String, dynamic>>>(
@@ -151,24 +84,59 @@ class _FaultReportingScreenState extends State<FaultReportingScreen> {
                     itemCount: reports.length,
                     itemBuilder: (context, index) {
                       var report = reports[index];
-                      return Card(
-                        margin: EdgeInsets.symmetric(vertical: 8),
-                        child: ListTile(
-                          title: Text(report['description']),
-                          subtitle: Text('Status: ${report['status']}'),
-                          trailing: IconButton(
-                            icon: Icon(Icons.edit),
-                            onPressed: () {
-                              // Handle status update or fault repair progress here
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => FaultReportScreen(),
-                                ),
-                              );
-                            },
-                          ),
-                        ),
+                      String transformerId = report['transformer_id'];
+                      String userId = report['reported_by'];
+
+                      return FutureBuilder<Map<String, dynamic>>(
+                        future: Future.wait([
+                          _getTransformerData(transformerId),
+                          _getUserData(userId)
+                        ]).then((results) {
+                          var transformerData = results[0];
+                          var userData = results[1];
+                          return {
+                            'transformer': transformerData,
+                            'user': userData,
+                          };
+                        }),
+                        builder: (context, futureSnapshot) {
+                          if (futureSnapshot.connectionState == ConnectionState.waiting) {
+                            return Center(child: CircularProgressIndicator());
+                          }
+
+                          if (!futureSnapshot.hasData) {
+                            return Card(child: ListTile(title: Text('Error loading data')));
+                          }
+
+                          var data = futureSnapshot.data!;
+                          var transformer = data['transformer'];
+                          var user = data['user'];
+
+                          // Format date
+                          var formattedDate = DateFormat('dd MMM yyyy, hh:mm a').format(
+                            (report['date'] as Timestamp).toDate(),
+                          );
+
+                          return Card(
+                            margin: EdgeInsets.symmetric(vertical: 8),
+                            child: ListTile(
+                              title: Text(report['description']),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text('Status: ${report['status']}'),
+                                  Text('Zone: ${report['zone']}'),
+                                  Text('Reported by: ${user['name'] ?? 'Unknown User'}'),
+                                  Text('Transformer No ${transformer['id'] ?? 'Unknown Transformer'} at ${transformer['location'] ?? 'Unknown location'}'),
+                                  Text('Date: $formattedDate'),
+                                ],
+                              ),
+                              trailing: report['image_url'] != null && report['image_url']!.isNotEmpty
+                                  ? Image.network(report['image_url'], width: 50, height: 50)
+                                  : null,
+                            ),
+                          );
+                        },
                       );
                     },
                   );

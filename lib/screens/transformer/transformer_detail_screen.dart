@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TransformerDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> transformerData;
@@ -16,6 +19,56 @@ class TransformerDetailsScreen extends StatelessWidget {
       await launchUrl(url, mode: LaunchMode.externalApplication);
     } else {
       throw 'Could not launch Google Maps';
+    }
+  }
+
+  Future<void> _createFaultReport(BuildContext context, String description, File? image) async {
+    try {
+      CollectionReference faultReports = FirebaseFirestore.instance.collection(
+          'fault_reports');
+
+      User? user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        String connectedUserId = user?.uid ?? 'Unknown User';
+
+        DocumentReference reportRef = await faultReports.add({
+          'transformer_id': transformerData['id'],
+          'reported_by': connectedUserId,
+          'description': description,
+          'zone': transformerData['zone'],
+          'date': Timestamp.now(),
+          'image_url': null, // Placeholder for image URL
+        });
+
+        // // If an image is selected, upload it to Firebase Storage
+        // if (image != null) {
+        //   Reference storageRef = FirebaseStorage.instance
+        //       .ref()
+        //       .child('fault_reports/${reportRef.id}.jpg');
+        //
+        //   await storageRef.putFile(image);
+        //   String imageUrl = await storageRef.getDownloadURL();
+        //
+        //   // Update the fault report with the image URL
+        //   await reportRef.update({'image_url': imageUrl});
+        // }
+
+        // Update the transformer status to "Faulty"
+        await FirebaseFirestore.instance.collection('transformers').doc(
+            transformerData['id']).update({
+          'status': 'Faulty',
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Fault Report Created Successfully!')));
+      }else{
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Login First')));
+      }
+
+      } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error creating report: $e')));
     }
   }
 
@@ -36,6 +89,58 @@ class TransformerDetailsScreen extends StatelessWidget {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error creating task: $e')));
     }
+  }
+
+  void _showFaultReportForm(BuildContext context) {
+    final TextEditingController descriptionController = TextEditingController();
+    File? selectedImage;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Report Transformer Fault'),
+          content: SingleChildScrollView(
+            child: Column(
+              children: [
+                TextField(
+                  controller: descriptionController,
+                  decoration: InputDecoration(labelText: 'Description'),
+                  maxLines: 3,
+                ),
+                SizedBox(height: 16),
+                ElevatedButton(
+                  onPressed: () async {
+                    final pickedFile = await ImagePicker().pickImage(source: ImageSource.gallery);
+                    if (pickedFile != null) {
+                      selectedImage = File(pickedFile.path);
+                    }
+                  },
+                  child: Text('Attach Image (Optional)'),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Cancel'),
+            ),
+            TextButton(
+              onPressed: () {
+                if (descriptionController.text.isNotEmpty) {
+                  _createFaultReport(context, descriptionController.text, selectedImage);
+                  Navigator.pop(context);
+                } else {
+                  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Please provide a description')));
+                }
+              },
+              child: Text('Report Fault'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   // Form to create a new maintenance task
@@ -163,6 +268,13 @@ class TransformerDetailsScreen extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () => _showMaintenanceTaskForm(context),
                 child: Text('Create Maintenance Task'),
+              ),
+            ),
+            SizedBox(height: 20),
+            Center(
+              child: ElevatedButton(
+                onPressed: () => _showFaultReportForm(context),
+                child: Text('Report Fault'),
               ),
             ),
           ],
