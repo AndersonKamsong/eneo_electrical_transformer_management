@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../services/maintenance_service.dart';
+import '../../services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TaskDetailScreen extends StatefulWidget {
   final String taskId;
@@ -56,22 +58,53 @@ class _TaskDetailScreenState extends State<TaskDetailScreen> {
                     _maintenanceService.updateTaskStatus(widget.taskId, status);
                   },
                 ),
+                StreamBuilder<User?>(
+                  stream: AuthService().user,
+                  builder: (context, snapshot) {
+                    if (snapshot.hasData) {
+                      return FutureBuilder<DocumentSnapshot>(
+                        future: FirebaseFirestore.instance.collection('users').doc(snapshot.data!.uid).get(),
+                        builder: (context, roleSnapshot) {
+                          if (roleSnapshot.connectionState == ConnectionState.waiting) {
+                            return const Center(child: CircularProgressIndicator());
+                          }
 
-                SizedBox(height: 20),
-                Text('Assign Task to a Technician:'),
-                TextField(
-                  onChanged: (value) {
-                    assignedTo = value;
-                  },
-                  decoration: InputDecoration(labelText: 'Enter Technician ID'),
-                ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (assignedTo.isNotEmpty) {
-                      _maintenanceService.assignTask(widget.taskId, assignedTo);
+                          if (roleSnapshot.hasError) {
+                            return const Center(child: Text('Error loading role'));
+                          }
+
+                          final userRole = roleSnapshot.data!['role'] ?? 'user';
+
+                          if (userRole == 'Admin'|| userRole == 'Supervisor') {
+                            return Column(
+                                children: [
+                                  SizedBox(height: 20),
+                                  Text('Assign Task to a Technician:'),
+                                  TextField(
+                                    onChanged: (value) {
+                                      assignedTo = value;
+                                    },
+                                    decoration: InputDecoration(labelText: 'Enter Technician ID'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () {
+                                      if (assignedTo.isNotEmpty) {
+                                        _maintenanceService.assignTask(widget.taskId, assignedTo);
+                                      }
+                                    },
+                                    child: Text('Assign'),
+                                  ),
+                                ]
+                            );
+                          } else {
+                            return SizedBox.shrink();  // No icon for regular users
+                          }
+                        },
+                      );
+                    } else {
+                      return SizedBox.shrink();  // No logout button for unauthenticated users
                     }
                   },
-                  child: Text('Assign'),
                 ),
               ],
             ),

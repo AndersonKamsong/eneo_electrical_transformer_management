@@ -2,7 +2,6 @@ import 'dart:math';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
@@ -12,31 +11,30 @@ class AuthService {
   String _generateRandomPassword(int length) {
     const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#\$%^&*";
     Random random = Random();
-    return String.fromCharCodes(Iterable.generate(length, (_) => characters.codeUnitAt(random.nextInt(characters.length))));
+    return String.fromCharCodes(
+        Iterable.generate(length, (_) => characters.codeUnitAt(random.nextInt(characters.length)))
+    );
   }
 
   Stream<User?> get user {
     return _auth.authStateChanges();
   }
+
   // Add User (Admin Only)
   Future<User?> addUser({
-      required String adminUid,
-      required String email,
-      required String username,
-      required String role,
-    }) async {
+    required String adminUid,
+    required String email,
+    required String username,
+    required String role,
+  }) async {
     try {
-      // Check if the admin user is indeed an admin
       DocumentSnapshot adminDoc = await _firestore.collection("users").doc(adminUid).get();
       if (!adminDoc.exists || adminDoc["role"] != "Admin") {
         throw PlatformException(code: "permission-denied", message: "Only admins can create new users");
       }
 
-      // Generate random password
-      // String randomPassword = _generateRandomPassword(8);
       String randomPassword = "Ander123";
 
-      // Create user
       UserCredential userCredential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: randomPassword,
@@ -52,8 +50,6 @@ class AuthService {
           "already_verify": false,
           "createdAt": FieldValue.serverTimestamp(),
         });
-
-        // Send Email with generated password (Assuming email sending function is implemented)
         await sendEmail(email, "Your Account Details", "Your password is: $randomPassword. Please change it after login.");
       }
       return user;
@@ -81,6 +77,23 @@ class AuthService {
       return user;
     } catch (e) {
       print("Sign In Error: $e");
+      return null;
+    }
+  }
+
+  // Get Current User Role
+  Future<String?> getCurrentUserRole() async {
+    try {
+      User? user = _auth.currentUser;
+      if (user != null) {
+        DocumentSnapshot userDoc = await _firestore.collection("users").doc(user.uid).get();
+        if (userDoc.exists) {
+          return userDoc["role"] as String?;
+        }
+      }
+      return null;
+    } catch (e) {
+      print("Error fetching user role: $e");
       return null;
     }
   }
@@ -144,6 +157,6 @@ class AuthService {
 
   // Placeholder for email sending function
   Future<void> sendEmail(String email, String subject, String body) async {
-    print("Email sent to $email with subject: $subject with body :$body");
+    print("Email sent to $email with subject: $subject with body: $body");
   }
 }

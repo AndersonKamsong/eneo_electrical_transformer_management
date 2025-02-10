@@ -80,18 +80,18 @@ class _HomeScreenState extends State<HomeScreen> {
                       return const Center(child: Text('Error loading role'));
                     }
 
-                    // final userRole = roleSnapshot.data!['role'] ?? 'user';
+                    final userRole = roleSnapshot.data!['role'] ?? 'user';
 
-                    // if (userRole == 'admin') {
+                    if (userRole == 'admin') {
                       return IconButton(
                         icon: const Icon(Icons.dashboard),
                         onPressed: () {
                             Navigator.pushNamed(context, '/admin');
                           },
                       );
-                    // } else {
-                    //   return SizedBox.shrink();  // No icon for regular users
-                    // }
+                    } else {
+                      return SizedBox.shrink();  // No icon for regular users
+                    }
                   },
                 );
               } else {

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'add_transformer_screen.dart'; // Screen for adding a transformer
 import 'edit_transformer_screen.dart'; // Screen for editing a transformer
-import 'transformer_detail_screen.dart'; // Screen for  a transformer detail
+import 'transformer_detail_screen.dart'; // Screen for transformer detail
 import '../../services/transformer_service.dart';
+import '../auth/login_screen.dart'; // Import login screen
 
 class TransformerManagementScreen extends StatefulWidget {
   @override
@@ -12,42 +14,58 @@ class TransformerManagementScreen extends StatefulWidget {
 
 class _TransformerManagementScreenState extends State<TransformerManagementScreen> {
   final TransformerService _service = TransformerService();
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  User? _currentUser;
+  String? _userRole;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkUserStatus();
+  }
+
+  void _checkUserStatus() async {
+    _currentUser = _auth.currentUser;
+    if (_currentUser == null) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => LoginScreen()),
+      );
+    } else {
+      await _fetchUserRole();
+    }
+  }
+
+  Future<void> _fetchUserRole() async {
+    DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('users').doc(_currentUser!.uid).get();
+    setState(() {
+      _userRole = userDoc['role'];
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_currentUser == null) {
+      return Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    bool canManage = _userRole == 'Admin' || _userRole == 'Supervisor';
+
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Transformer Management'),
-        // actions: [
-        //   IconButton(
-        //     icon: Icon(Icons.add),
-        //     onPressed: () {
-        //       Navigator.push(
-        //         context,
-        //         MaterialPageRoute(builder: (context) => AddTransformerScreen()),
-        //       );
-        //     },
-        //   ),
-        // ],
-      ),
-      floatingActionButton: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          SizedBox(
-            height: 10,
-          ),
-          FloatingActionButton(
-            heroTag: "add",
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => AddTransformerScreen()),
-              );
-            },
-            child: Icon(Icons.add),
-          ),
-        ],
-      ),
+      appBar: AppBar(title: Text('Transformer Management')),
+      floatingActionButton: canManage
+          ? FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => AddTransformerScreen()),
+          );
+        },
+        child: Icon(Icons.add),
+      )
+          : null,
       body: FutureBuilder<List<Map<String, dynamic>>>(
         future: _service.fetchTransformers(),
         builder: (context, snapshot) {
@@ -85,24 +103,26 @@ class _TransformerManagementScreenState extends State<TransformerManagementScree
                           );
                         },
                       ),
-                      IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
+                      if (canManage) ...[
+                        IconButton(
+                          icon: Icon(Icons.edit, color: Colors.blue),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
                                 builder: (context) => EditTransformerScreen(transformerData: transformer),
-                            ),
-                          );
-                        },
-                      ),
-                      IconButton(
-                        icon: Icon(Icons.delete, color: Colors.red),
-                        onPressed: () async {
-                          await _service.deleteTransformer(transformer['id']);
-                          setState(() {}); // Refresh list after deletion
-                        },
-                      ),
+                              ),
+                            );
+                          },
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            await _service.deleteTransformer(transformer['id']);
+                            setState(() {});
+                          },
+                        ),
+                      ]
                     ],
                   ),
                 ),

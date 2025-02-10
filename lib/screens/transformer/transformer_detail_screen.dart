@@ -5,9 +5,13 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/auth_service.dart';
+import '../auth/login_screen.dart'; // Import login screen
 
 class TransformerDetailsScreen extends StatelessWidget {
   final Map<String, dynamic> transformerData;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+  // final String? _userRole;
 
   const TransformerDetailsScreen({Key? key, required this.transformerData}) : super(key: key);
 
@@ -266,16 +270,44 @@ class TransformerDetailsScreen extends StatelessWidget {
             SizedBox(height: 20),
             Center(
               child: ElevatedButton(
-                onPressed: () => _showMaintenanceTaskForm(context),
-                child: Text('Create Maintenance Task'),
-              ),
-            ),
-            SizedBox(height: 20),
-            Center(
-              child: ElevatedButton(
                 onPressed: () => _showFaultReportForm(context),
                 child: Text('Report Fault'),
               ),
+            ),
+            SizedBox(height: 20),
+            StreamBuilder<User?>(
+              stream: AuthService().user,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return FutureBuilder<DocumentSnapshot>(
+                    future: FirebaseFirestore.instance.collection('users').doc(snapshot.data!.uid).get(),
+                    builder: (context, roleSnapshot) {
+                      if (roleSnapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      if (roleSnapshot.hasError) {
+                        return const Center(child: Text('Error loading role'));
+                      }
+
+                      final userRole = roleSnapshot.data!['role'] ?? 'user';
+
+                      if (userRole == 'Admin'|| userRole == 'Supervisor') {
+                        return Center(
+                          child: ElevatedButton(
+                            onPressed: () => _showMaintenanceTaskForm(context),
+                            child: Text('Create Maintenance Task'),
+                          ),
+                        );
+                      } else {
+                        return SizedBox.shrink();  // No icon for regular users
+                      }
+                    },
+                  );
+                } else {
+                  return SizedBox.shrink();  // No logout button for unauthenticated users
+                }
+              },
             ),
           ],
         ),
